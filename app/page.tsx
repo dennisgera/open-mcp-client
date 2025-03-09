@@ -2,6 +2,7 @@ import { CopilotSidebar } from "@copilotkit/react-ui";
 import { CopilotActionHandler } from "./components/CopilotActionHandler";
 import { CopilotKitCSSProperties } from "@copilotkit/react-ui";
 import { MainContent } from "./components/MainContent";
+import { ChatMPCLangGraph } from "@/components/server-dashboard"
 
 export default function Home() {
   return (
@@ -24,7 +25,7 @@ export default function Home() {
             initial: "Need any help?",
           }}
         >
-          <MainContent />
+          <ChatMPCLangGraph />
         </CopilotSidebar>
       </div>
     </div>

@@ -1,17 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useCoAgent } from '@copilotkit/react-core';
-import { AgentState, ServiceConnection, MCPConfig } from '../types/agent';
+
+import { ChatMPCLangGraph } from "@/components/server-dashboard"
 
 interface MainContentProps {
   children?: React.ReactNode;
 }
 
 export const MainContent: React.FC<MainContentProps> = ({ children }) => {
-  const { state, setState } = useCoAgent<AgentState>({
-    name: 'sample_agent',
-  });
+
+  
 
   // Form state for adding new services
   const [newServiceName, setNewServiceName] = useState('');

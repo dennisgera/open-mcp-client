@@ -1,14 +1,14 @@
 import { CopilotSidebar } from "@copilotkit/react-ui";
 import { CopilotActionHandler } from "./components/CopilotActionHandler";
 import { CopilotKitCSSProperties } from "@copilotkit/react-ui";
+import { MainContent } from "./components/MainContent";
 
 export default function Home() {
   return (
     <div style={{ height: '100%', width: '100%' }}>
-      {/* Client component that sets up the Copilot action handler */}
       <CopilotActionHandler />
       
-      {/* Customize the default primary color used by CopilotKit components */}
+      {/* In this case we simply customize the primary color of the default designs. For more options see https://docs.copilotkit.ai/guides/custom-look-and-feel  */}
       <div
         style={
           {
@@ -23,8 +23,10 @@ export default function Home() {
             title: "MCP Assistant",
             initial: "Need any help?",
           }}
-      />
-      /</div>
+        >
+          <MainContent />
+        </CopilotSidebar>
+      </div>
     </div>
   );
 }

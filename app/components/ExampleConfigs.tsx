@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  Calculator,
-  Search,
-  Database,
-  ArrowRight,
-} from "lucide-react";
+import { Calculator, Search, Database, ArrowRight } from "lucide-react";
 import { JSX } from "react";
 
 type ExampleConfig = {
@@ -24,7 +19,7 @@ const EXAMPLE_CONFIGS: ExampleConfig[] = [
     config: {
       math: {
         command: "python",
-        args: ["agent/math_server.py"],
+        args: ["math_server.py"],
         transport: "stdio",
       },
     },
@@ -48,7 +43,7 @@ const EXAMPLE_CONFIGS: ExampleConfig[] = [
     config: {
       math: {
         command: "python",
-        args: ["agent/math_server.py"],
+        args: ["math_server.py"],
         transport: "stdio",
       },
       search: {

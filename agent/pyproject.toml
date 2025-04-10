@@ -40,7 +40,7 @@ uvicorn = "^0.31.0"
 python-dotenv = "^1.0.1"
 langchain-core = "^0.3.25"
 langgraph-cli = {extras = ["inmem"], version = "^0.1.64"}
-langchain-mcp-adapters = "^0.0.3"
+langchain-mcp-adapters = "^0.0.7"
 fastmcp = "^0.4.1"
 langgraph = "^0.3.5"
 

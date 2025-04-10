@@ -3,7 +3,8 @@ This is the main entry point for the agent.
 It defines the workflow graph, state, tools, nodes and edges.
 """
 
-from typing_extensions import Literal, TypedDict, Dict, List, Union, Optional
+import httpx
+from typing_extensions import Literal, TypedDict, Dict, List, Union, Optional, Any
 from langchain_openai import ChatOpenAI
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import StateGraph, END
@@ -25,6 +26,8 @@ class StdioConnection(TypedDict):
 class SSEConnection(TypedDict):
     url: str
     transport: Literal["sse"]
+    auth: Optional[Dict[str, str]]
+    headers: Optional[Dict[str, Any]]
 
 
 # Type for MCP configuration
@@ -55,6 +58,49 @@ DEFAULT_MCP_CONFIG: MCPConfig = {
 }
 
 
+async def get_bearer_token(base_url: str, username: str, password: str) -> str:
+    """Get a bearer token from the server using basic auth."""
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{base_url}/token",
+            data={"username": username, "password": password},
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            timeout=5,
+        )
+        response.raise_for_status()
+        return response.json()["access_token"]
+
+
+async def prepare_mcp_connections(config: MCPConfig) -> MCPConfig:
+    """Injects Bearer token headers into SSE connections with basic auth."""
+    new_config: MCPConfig = {}
+
+    for name, conn in config.items():
+        if conn["transport"] == "sse":
+            auth = conn.get("auth", {})
+            if auth.get("type") == "basic":
+                base_url = conn["url"].rsplit("/", 1)[0]
+                token = await get_bearer_token(
+                    base_url, auth["username"], auth["password"]
+                )
+
+                # Add Authorization header to the SSE connection
+                new_config[name] = {
+                    "transport": "sse",
+                    "url": conn["url"],
+                    "headers": {
+                        "Authorization": f"Bearer {token}",
+                        **(conn.get("headers") or {}),
+                    },
+                }
+            else:
+                new_config[name] = conn
+        else:
+            new_config[name] = conn
+
+    return new_config
+
+
 async def chat_node(
     state: AgentState, config: RunnableConfig
 ) -> Command[Literal["__end__"]]:
@@ -64,11 +110,12 @@ async def chat_node(
     """
     # Get MCP configuration from state, or use the default config if not provided
     mcp_config = state.get("mcp_config", DEFAULT_MCP_CONFIG)
+    preprocessed_config = await prepare_mcp_connections(mcp_config)
 
     print(f"mcp_config: {mcp_config}, default: {DEFAULT_MCP_CONFIG}")
 
     # Set up the MCP client and tools using the configuration from state
-    async with MultiServerMCPClient(mcp_config) as mcp_client:
+    async with MultiServerMCPClient(preprocessed_config) as mcp_client:
         # Get the tools
         mcp_tools = mcp_client.get_tools()
 

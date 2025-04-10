@@ -6,6 +6,7 @@ import { ExampleConfigs } from "./ExampleConfigs";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 
 type ConnectionType = "stdio" | "sse";
+type AuthType = "none" | "token" | "basic";
 
 interface StdioConfig {
   command: string;
@@ -16,6 +17,12 @@ interface StdioConfig {
 interface SSEConfig {
   url: string;
   transport: "sse";
+  auth?: {
+    type: AuthType;
+    token?: string;
+    username?: string;
+    password?: string;
+  };
 }
 
 type ServerConfig = StdioConfig | SSEConfig;
@@ -45,7 +52,13 @@ const ExternalLink = () => (
   </svg>
 );
 
-export function MCPConfigForm({ showSpreadsheet, setShowSpreadsheet }: { showSpreadsheet: boolean, setShowSpreadsheet: (value: boolean) => void }) {
+export function MCPConfigForm({
+  showSpreadsheet,
+  setShowSpreadsheet,
+}: {
+  showSpreadsheet: boolean;
+  setShowSpreadsheet: (value: boolean) => void;
+}) {
   // Use our localStorage hook for persistent storage
   const [savedConfigs, setSavedConfigs] = useLocalStorage<
     Record<string, ServerConfig>
@@ -78,6 +91,10 @@ export function MCPConfigForm({ showSpreadsheet, setShowSpreadsheet }: { showSpr
   const [isLoading, setIsLoading] = useState(true);
   const [showAddServerForm, setShowAddServerForm] = useState(false);
   const [showExampleConfigs, setShowExampleConfigs] = useState(false);
+  const [authType, setAuthType] = useState<AuthType>("none");
+  const [authToken, setAuthToken] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
   // Calculate server statistics
   const totalServers = Object.keys(configs).length;
@@ -128,6 +145,13 @@ export function MCPConfigForm({ showSpreadsheet, setShowSpreadsheet }: { showSpr
         : {
             url,
             transport: "sse" as const,
+            ...(authType !== "none" && {
+              auth: {
+                type: authType,
+                ...(authType === "token" && { token: authToken }),
+                ...(authType === "basic" && { username, password }),
+              },
+            }),
           };
 
     setConfigs({
@@ -140,6 +164,10 @@ export function MCPConfigForm({ showSpreadsheet, setShowSpreadsheet }: { showSpr
     setCommand("");
     setArgs("");
     setUrl("");
+    setAuthType("none");
+    setAuthToken("");
+    setUsername("");
+    setPassword("");
     setShowAddServerForm(false);
   };
 
@@ -235,7 +263,7 @@ export function MCPConfigForm({ showSpreadsheet, setShowSpreadsheet }: { showSpr
               onClick={() => setShowSpreadsheet(!showSpreadsheet)}
               className="w-full sm:w-auto px-3 py-1.5 bg-gray-800 text-white rounded-md text-sm font-medium hover:bg-gray-700 flex items-center gap-1 justify-center"
             >
-              {showSpreadsheet ? 'Hide Spreadsheet' : 'Show Spreadsheet'}
+              {showSpreadsheet ? "Hide Spreadsheet" : "Show Spreadsheet"}
             </button>
             <button
               onClick={() => setShowAddServerForm(true)}
@@ -392,7 +420,30 @@ export function MCPConfigForm({ showSpreadsheet, setShowSpreadsheet }: { showSpr
                         </p>
                       </>
                     ) : (
-                      <p className="truncate">URL: {config.url}</p>
+                      <>
+                        <p className="truncate">URL: {config.url}</p>
+                        {config.auth && (
+                          <p className="mt-1">
+                            <span className="inline-flex items-center px-2 py-0.5 bg-blue-100 text-xs rounded">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="w-3 h-3 mr-1"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                                />
+                              </svg>
+                              Auth: {config.auth.type}
+                            </span>
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -578,6 +629,93 @@ export function MCPConfigForm({ showSpreadsheet, setShowSpreadsheet }: { showSpr
                     className="w-full px-3 py-2 border rounded-md text-sm"
                     placeholder="e.g., http://localhost:8000/events"
                   />
+                </div>
+              )}
+
+              {connectionType === "sse" && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Authentication
+                  </label>
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    <button
+                      type="button"
+                      onClick={() => setAuthType("none")}
+                      className={`px-3 py-2 border rounded-md text-center text-sm ${
+                        authType === "none"
+                          ? "bg-gray-200 border-gray-400 text-gray-800"
+                          : "bg-white text-gray-700"
+                      }`}
+                    >
+                      None
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAuthType("token")}
+                      className={`px-3 py-2 border rounded-md text-center text-sm ${
+                        authType === "token"
+                          ? "bg-gray-200 border-gray-400 text-gray-800"
+                          : "bg-white text-gray-700"
+                      }`}
+                    >
+                      Token
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAuthType("basic")}
+                      className={`px-3 py-2 border rounded-md text-center text-sm ${
+                        authType === "basic"
+                          ? "bg-gray-200 border-gray-400 text-gray-800"
+                          : "bg-white text-gray-700"
+                      }`}
+                    >
+                      Basic Auth
+                    </button>
+                  </div>
+
+                  {authType === "token" && (
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Auth Token
+                      </label>
+                      <input
+                        type="password"
+                        value={authToken}
+                        onChange={(e) => setAuthToken(e.target.value)}
+                        className="w-full px-3 py-2 border rounded-md text-sm"
+                        placeholder="Enter your authentication token"
+                      />
+                    </div>
+                  )}
+
+                  {authType === "basic" && (
+                    <>
+                      <div className="mb-3">
+                        <label className="block text-sm font-medium mb-1">
+                          Username
+                        </label>
+                        <input
+                          type="text"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          className="w-full px-3 py-2 border rounded-md text-sm"
+                          placeholder="Enter username"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">
+                          Password
+                        </label>
+                        <input
+                          type="password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="w-full px-3 py-2 border rounded-md text-sm"
+                          placeholder="Enter password"
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
